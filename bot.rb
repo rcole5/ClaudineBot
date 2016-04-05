@@ -7,21 +7,34 @@ require "net/https"
 require "rest-client"
 
 # Variable Declaration
-permitLink = Array.new
-
+$permitLink = Array.new
+message = Array.new
 
 class Hello
   include Cinch::Plugin
 
   # listen_to :message, 
 
-  match("test")
+  match("ban")
   def execute(m)
-    m.reply "Hello, #{m.user.nick}"
+    m.reply "/timeout #{m.user.nick} 60"
   end
 end
 
-
+def canLink(m)
+	#if isMod(m)
+	#	return true
+	#end
+	
+	if !$permitLink.empty?
+		if $permitLink.include? m.user.nick.downcase
+			$permitLink.delete(m.user.nick.downcase)
+			return true
+		end
+	else
+		return false
+	end
+end
 
 def isMod(m)
   mods = JSON.parse((RestClient.get "http://tmi.twitch.tv/group/user/notaloli/chatters").to_str)
@@ -33,7 +46,6 @@ def isMod(m)
 end
 
 bot = Cinch::Bot.new do
-
   # Configure bot.
   configure do |c|
     file = IniFile.load('config.ini')
@@ -43,32 +55,38 @@ bot = Cinch::Bot.new do
     c.nick = data['Username']
     c.user = data['Username']
     c.password = data['Password']
-    c.channels = ["#"]
+    c.channels = ["#notaloli"]
     c.plugins.plugins = [Hello]
   end
 
   #############################
   # BEGIN LINK AND IP CHECKER #
   #############################
+	on :message do |m|
+	message = m.message.split(" ")
+	end
 
   # Check for link e.g. www.example.com
-  on :message, /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/ix do |m|
-    if !isMod(m)
-      Channel('#').send("/timeout #{m.user.nick} 1")
-      Channel('#').send("No links please, #{m.user.nick}")
+  on :message, /.*([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?).*/ix do |m|
+    if !canLink(m)
+      #Channel('#').send("/timeout #{m.user.nick} 1")
+      #Channel('#').send("No links please, #{m.user.nick}")
+			m.reply("Banned!")
     end
   end
 
   # Check for link e.g. http://example.com
-  on :message, /https?:\/\/[\S]+/ do |m|
-    if !isMod(m)
+  on :message, /.*(https?:\/\/[\S]+).*/ do |m|
+    if !canLink(m)
       # timeout(m.user.nick)
+			m.reply("Banned!")
     end
   end
 
   # Check for link e.g. 123.123.123.123
-  on :message, /^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}(?:\-([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]))?$/ do |m|
-    if !isMod(m)
+  on :message, /^.*(([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}(?:\-([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]))?).*$/ do |m|
+    if !canLink(m)
+			m.reply("Banned!")
       # timeout(m.user.nick)
     end
   end
@@ -85,6 +103,15 @@ bot = Cinch::Bot.new do
     end
   end
 
+	on :message, "!vanish" do |m|
+		m.reply "/timeout #{m.user.nick} 1"
+		m.reply "Poof! You have vanished!"
+	end
+
+	on :message, /!permit [A-Za-z0-9_]+/ do |m|
+		user = message[1]
+		$permitLink.push(user.downcase)
+	end
 
 end
 
