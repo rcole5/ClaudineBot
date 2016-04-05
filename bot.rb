@@ -5,6 +5,7 @@ require "json"
 require "open-uri"
 require "net/https"
 require "rest-client"
+require "./test.rb"
 
 # Class for handling links.
 class LinkChecker
@@ -18,9 +19,13 @@ class LinkChecker
   set :prefix, //
 
   # Set regular expressions and map them to their method.
+  # www.example.com and example.com
   match /.*([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?).*/, method: :isLink
-  match /^.*(([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}(?:\-([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]))?).*$/, method: :isLink
+  # https://example
   match /.*(https?:\/\/[\S]+).*/, method: :isLink
+  # 255.255.255.255
+  match /^.*(([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}(?:\-([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]))?).*$/, method: :isLink
+  # !permit username
   match /!permit [A-Za-z0-9_]+/, method: :permit
 
   # Add user to permit array.
@@ -114,9 +119,13 @@ bot = Cinch::Bot.new do
     c.user = data['Username']
     c.password = data['Password']
     c.channels = ["#notaloli"]
-    c.plugins.plugins = [LinkChecker, Banner]
+    c.plugins.plugins = [LinkChecker, Banner, Test]
   end
 end
 
-# Start Bot
+# Create logs.
+bot.loggers << Cinch::Logger::FormattedLogger.new(File.open("log.log", "a"))
+bot.loggers.first.level  = :fatal
+
+# Start Bot.
 bot.start
