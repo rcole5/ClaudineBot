@@ -5,7 +5,6 @@ require "json"
 require "open-uri"
 require "net/https"
 require "rest-client"
-require "./test.rb"
 
 # Class for handling links.
 class LinkChecker
@@ -119,7 +118,7 @@ bot = Cinch::Bot.new do
     c.user = data['Username']
     c.password = data['Password']
     c.channels = ["#notaloli"]
-    c.plugins.plugins = [LinkChecker, Banner, Test]
+    c.plugins.plugins = [LinkChecker, Banner]
   end
 end
 
