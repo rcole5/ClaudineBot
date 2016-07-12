@@ -42,11 +42,7 @@ class LinkChecker
   # Returns true if the user is a mod in the current channel and false if they are not.
   def isMod(m)
     mods = JSON.parse((RestClient.get "http://tmi.twitch.tv/group/user/notaloli/chatters").to_str)
-    if mods['chatters']['moderators'].include? m.user.nick
-      return true
-    else
-      return false
-    end
+    (mods['chatters']['moderators'].include? m.user.nick) ? (return true) : ( return false)
   end
 
   # Checks to see if the user can send a link.
@@ -106,6 +102,18 @@ class Banner
 
 end
 
+class Test
+	include Cinch::Plugin
+	match "test", method: :test
+
+	def test(m)
+		m.reply("ok")
+		raw("CAP REQ :twitch.tv/commands")
+		bot.send("CAP REQ :twitch.tv/membership")
+		m.reply("/mods")
+	end
+end
+
 # Initialize the bot.
 bot = Cinch::Bot.new do
   # Configure bot.
@@ -118,7 +126,7 @@ bot = Cinch::Bot.new do
     c.user = data['Username']
     c.password = data['Password']
     c.channels = ["#notaloli"]
-    c.plugins.plugins = [LinkChecker, Banner]
+    c.plugins.plugins = [LinkChecker, Banner, Test]
   end
 end
 
@@ -128,3 +136,4 @@ bot.loggers.first.level  = :fatal
 
 # Start Bot.
 bot.start
+bot.send("CAP REQ :twitch.tv/commands")
